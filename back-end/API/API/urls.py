@@ -21,5 +21,7 @@ from reports import views as ReportView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('get-product-data/', ReportView.get_product_data),
-    path('set-product-data/', ReportView.set_product_data)
+    path('set-product-data/', ReportView.set_product_data),
+    path('order/', ReportView.order),
+    path('upi-qr/', ReportView.upi_qr_operation),
 ]
