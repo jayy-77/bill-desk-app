@@ -24,4 +24,6 @@ urlpatterns = [
     path('set-product-data/', ReportView.set_product_data),
     path('order/', ReportView.order),
     path('upi-qr/', ReportView.upi_qr_operation),
+    path('sales/', ReportView.sales),
+    path('sales-report/', ReportView.sales_report)
 ]

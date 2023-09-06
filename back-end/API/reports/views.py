@@ -8,6 +8,7 @@ import os
 import qrcode
 import random
 import datetime
+import pandas as pd
 
 cred = credentials.Certificate("C:/Users/Admin/Music/Bill-Desk/back-end/API/reports/upi-bill-desk-firebase-adminsdk-8ypmv-9d158df6fb.json")
 firebase_admin.initialize_app(cred, {'storageBucket': 'upi-bill-desk.appspot.com'})
@@ -15,8 +16,11 @@ firebase_admin.initialize_app(cred, {'storageBucket': 'upi-bill-desk.appspot.com
 db = firestore.client()
 rel_stocks_ref = db.collection("stocks").document("reliance")
 rel_sales_ref = db.collection("sales").document("reliance")
+product_data = {}
 
 def get_product_data(request):
+    global product_data
+    
     product_data = rel_stocks_ref.get().to_dict()
     
     return JsonResponse(product_data)
@@ -30,30 +34,41 @@ def set_product_data(request):
     
     return JsonResponse({"status": True})
 
-def order(request):
+def order(request):  
     order = request.GET.get("order")
     order = json.loads(order)
     products = rel_stocks_ref.get().to_dict()
-    sales_data = []
     
     for i in order:
         tmp_obj = products["product_data"][int(i)]
         products["product_data"][int(i)]["quantity"] = int(tmp_obj["quantity"]) - int(order[i]["purchase_qty"])
         
-        rel_sales_ref.update({
+        try:
+            rel_sales_ref.update({
             "sales": firestore.ArrayUnion([{
-                "date": datetime.datetime.now(),
+                "date": str(datetime.datetime.now()),
                 "name": products["product_data"][int(i)]["name"],
                 "quantity": order[i]["purchase_qty"],
                 "price": products["product_data"][int(i)]["price"]
             }])
         })
-        
+        except:
+            rel_sales_ref.set({
+            "sales": firestore.ArrayUnion([{
+                "date": str(datetime.datetime.now()),
+                "name": products["product_data"][int(i)]["name"],
+                "quantity": order[i]["purchase_qty"],
+                "price": products["product_data"][int(i)]["price"]
+            }])
+        })
+            
     rel_stocks_ref.update({
         "product_data": products["product_data"]
     })    
-
-    return JsonResponse({"status": True})
+    
+    db.collection("qr_data").document("reliance").update({'upi_url':"",'amount': ""})
+    
+    return JsonResponse(products)
 
 def upi_qr_operation(request):
     bucket = storage.bucket()
@@ -85,4 +100,31 @@ def upi_qr_operation(request):
     print(os.getcwd(), os.listdir())
     os.remove(img_name) 
     
-    return JsonResponse({"security_code": security_code})   
+    return JsonResponse({"security_code": security_code})  
+
+def sales(request):
+    sales_data = rel_sales_ref.get().to_dict()
+    
+    return JsonResponse({
+        "sales_data": sales_data
+    })
+    
+def sales_report(request):
+    sales_df = {}
+    sales_data = rel_sales_ref.get().to_dict()
+
+    for index_1, value_1 in enumerate(sales_data["sales"]):
+        date = str(value_1["date"]).split(" ")[0]
+        sales_df[index_1] = []
+        for value_2 in sales_data["sales"]:
+            if date == str(value_2["date"]).split(" ")[0]:
+                sales_df[index_1].append(value_2)
+                    
+
+    with pd.ExcelWriter(f'{str(datetime.datetime.now()).split(" ")[0]}-sales-report.xlsx') as writer:
+        for i in sales_df:
+            df = pd.DataFrame(sales_df[i])
+            df.to_excel(writer, sheet_name = f"{df['date'][0].split(' ')[0]}", index=False)
+    
+    return JsonResponse({"file_name": f'{str(datetime.datetime.now()).split(" ")[0]}-sales-report.xlsx'})
+    
