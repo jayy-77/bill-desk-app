@@ -14,10 +14,21 @@ cred = credentials.Certificate("C:/Users/Admin/Music/Bill-Desk/back-end/API/repo
 firebase_admin.initialize_app(cred, {'storageBucket': 'upi-bill-desk.appspot.com'})
 
 db = firestore.client()
-rel_stocks_ref = db.collection("stocks").document("reliance")
-rel_sales_ref = db.collection("sales").document("reliance")
+client_ref = db.collection("clients")
 product_data = {}
 
+def clients(request):
+    clients = [x.id for x in client_ref.stream()]
+    return JsonResponse({"clients": clients})
+
+def auth(request):
+    client = request.GET.dict().get("auth_data")
+    client = json.loads(client)
+    
+    access_key = client_ref.document(client["client"]).get().to_dict()["access_key"]
+
+    return JsonResponse({"status": True if access_key == client["access_key"] else False})
+    
 def get_product_data(request):
     global product_data
     
@@ -46,19 +57,23 @@ def order(request):
         try:
             rel_sales_ref.update({
             "sales": firestore.ArrayUnion([{
-                "date": str(datetime.datetime.now()),
+                "date": str(datetime.datetime.now()).split(" ")[0],
+                "time": str(datetime.datetime.now()).split(" ")[1].split(".")[0],
                 "name": products["product_data"][int(i)]["name"],
                 "quantity": order[i]["purchase_qty"],
-                "price": products["product_data"][int(i)]["price"]
+                "price": products["product_data"][int(i)]["price"],
+                "purchase_value": int(order[i]["purchase_qty"]) * int(products["product_data"][int(i)]["price"])
             }])
         })
         except:
             rel_sales_ref.set({
             "sales": firestore.ArrayUnion([{
-                "date": str(datetime.datetime.now()),
+                "date": str(datetime.datetime.now()).split(" ")[0],
+                "time": str(datetime.datetime.now()).split(" ")[1].split(".")[0],
                 "name": products["product_data"][int(i)]["name"],
                 "quantity": order[i]["purchase_qty"],
-                "price": products["product_data"][int(i)]["price"]
+                "price": products["product_data"][int(i)]["price"],
+                "purchase_value": int(order[i]["purchase_qty"]) * int(products["product_data"][int(i)]["price"])
             }])
         })
             
@@ -120,11 +135,12 @@ def sales_report(request):
             if date == str(value_2["date"]).split(" ")[0]:
                 sales_df[index_1].append(value_2)
                     
-
     with pd.ExcelWriter(f'{str(datetime.datetime.now()).split(" ")[0]}-sales-report.xlsx') as writer:
         for i in sales_df:
             df = pd.DataFrame(sales_df[i])
             df.to_excel(writer, sheet_name = f"{df['date'][0].split(' ')[0]}", index=False)
     
     return JsonResponse({"file_name": f'{str(datetime.datetime.now()).split(" ")[0]}-sales-report.xlsx'})
-    
+
+def analysis(request):
+    pass

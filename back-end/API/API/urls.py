@@ -25,5 +25,8 @@ urlpatterns = [
     path('order/', ReportView.order),
     path('upi-qr/', ReportView.upi_qr_operation),
     path('sales/', ReportView.sales),
-    path('sales-report/', ReportView.sales_report)
+    path('sales-report/', ReportView.sales_report),
+    path('analysis/', ReportView.analysis),
+    path('clients/', ReportView.clients),
+    path('auth/', ReportView.auth)
 ]
