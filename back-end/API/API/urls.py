@@ -28,5 +28,6 @@ urlpatterns = [
     path('sales-report/', ReportView.sales_report),
     path('analysis/', ReportView.analysis),
     path('clients/', ReportView.clients),
-    path('auth/', ReportView.auth)
+    path('auth/', ReportView.auth),
+    path('sales-analysis-date/', ReportView.analysis_date)
 ]

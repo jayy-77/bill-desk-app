@@ -16,30 +16,36 @@ firebase_admin.initialize_app(cred, {'storageBucket': 'upi-bill-desk.appspot.com
 db = firestore.client()
 client_ref = db.collection("clients")
 product_data = {}
+client_token = ""
 
 def clients(request):
     clients = [x.id for x in client_ref.stream()]
     return JsonResponse({"clients": clients})
 
 def auth(request):
+    global client_token
     client = request.GET.dict().get("auth_data")
     client = json.loads(client)
     
     access_key = client_ref.document(client["client"]).get().to_dict()["access_key"]
-
-    return JsonResponse({"status": True if access_key == client["access_key"] else False})
     
+    if access_key == client["access_key"]:
+        client_token = client["client"]
+        return JsonResponse({"status": True})
+    
+    else:
+        return JsonResponse({"status": False})
+        
 def get_product_data(request):
     global product_data
-    
-    product_data = rel_stocks_ref.get().to_dict()
+    product_data = client_ref.document("adani").collection("data").document("stocks").get().to_dict()
     
     return JsonResponse(product_data)
 
 def set_product_data(request):
     product_data = request.GET.dict()
     
-    rel_stocks_ref.update({
+    client_ref.document("adani").collection("data").document("stocks").update({
         "product_data": firestore.ArrayUnion([product_data])
     })
     
@@ -48,14 +54,14 @@ def set_product_data(request):
 def order(request):  
     order = request.GET.get("order")
     order = json.loads(order)
-    products = rel_stocks_ref.get().to_dict()
+    products = client_ref.document("adani").collection("data").document("stocks").get().to_dict()
     
     for i in order:
         tmp_obj = products["product_data"][int(i)]
         products["product_data"][int(i)]["quantity"] = int(tmp_obj["quantity"]) - int(order[i]["purchase_qty"])
         
         try:
-            rel_sales_ref.update({
+            client_ref.document("adani").collection("data").document("sales").update({
             "sales": firestore.ArrayUnion([{
                 "date": str(datetime.datetime.now()).split(" ")[0],
                 "time": str(datetime.datetime.now()).split(" ")[1].split(".")[0],
@@ -66,7 +72,7 @@ def order(request):
             }])
         })
         except:
-            rel_sales_ref.set({
+            client_ref.document("adani").collection("data").document("sales").set({
             "sales": firestore.ArrayUnion([{
                 "date": str(datetime.datetime.now()).split(" ")[0],
                 "time": str(datetime.datetime.now()).split(" ")[1].split(".")[0],
@@ -77,11 +83,11 @@ def order(request):
             }])
         })
             
-    rel_stocks_ref.update({
+    client_ref.document("adani").collection("data").document("stocks").update({
         "product_data": products["product_data"]
     })    
     
-    db.collection("qr_data").document("reliance").update({'upi_url':"",'amount': ""})
+    db.collection("qr_data").document("adani").update({'upi_url':"",'amount': ""})
     
     return JsonResponse(products)
 
@@ -111,14 +117,13 @@ def upi_qr_operation(request):
     blob.upload_from_filename(img_name)
     blob.make_public()
     
-    db.collection("qr_data").document("reliance").update({'upi_url':str(blob.public_url),'amount': total_bill})
-    print(os.getcwd(), os.listdir())
+    db.collection("qr_data").document("adani").update({'upi_url':str(blob.public_url),'amount': total_bill})
     os.remove(img_name) 
     
     return JsonResponse({"security_code": security_code})  
 
 def sales(request):
-    sales_data = rel_sales_ref.get().to_dict()
+    sales_data = client_ref.document("adani").collection("data").document("sales").get().to_dict()
     
     return JsonResponse({
         "sales_data": sales_data
@@ -126,7 +131,7 @@ def sales(request):
     
 def sales_report(request):
     sales_df = {}
-    sales_data = rel_sales_ref.get().to_dict()
+    sales_data = client_ref.document("adani").collection("data").document("sales").get().to_dict()
 
     for index_1, value_1 in enumerate(sales_data["sales"]):
         date = str(value_1["date"]).split(" ")[0]
@@ -143,4 +148,29 @@ def sales_report(request):
     return JsonResponse({"file_name": f'{str(datetime.datetime.now()).split(" ")[0]}-sales-report.xlsx'})
 
 def analysis(request):
-    pass
+    date = request.GET.dict()["data"]
+    date = json.loads(date)["date"]
+    data = []
+    
+    purchase_value_sale = client_ref.document("adani").collection("data").document("sales").get().to_dict()["sales"]
+    
+    labels = list(set([p["name"] for p in purchase_value_sale]))
+    
+    for i in range(len(labels)):
+        data.append(0)
+        for j in purchase_value_sale:
+            if labels[i] == j["name"] and date == j["date"]:
+                data[i] += int(j["purchase_value"])
+                
+    print(data)
+        
+    return JsonResponse({
+        "labels": labels,
+        "data": data
+    })
+    
+def analysis_date(request):
+    sales_analysis_data = client_ref.document("adani").collection("data").document("sales").get().to_dict()["sales"]
+    sales_analysis_date = set([date["date"] for date in sales_analysis_data])
+    
+    return JsonResponse({"dates": list(sales_analysis_date)})
