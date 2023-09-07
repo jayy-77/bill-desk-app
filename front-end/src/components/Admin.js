@@ -1,6 +1,12 @@
+import { useEffect } from "react"
 import { Link } from "react-router-dom"
 
 function Admin() {
+
+    useEffect(() =>{
+        if(!localStorage.getItem("auth_token")) window.location.href = '/'
+    })
+
     return (
         <>
             <div class="container text-center">

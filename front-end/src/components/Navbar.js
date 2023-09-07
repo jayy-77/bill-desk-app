@@ -11,7 +11,7 @@ function Navbar() {
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <Link class="nav-link active" aria-current="page" to="/auth">Auth</Link>
+                            <Link class="nav-link active" aria-current="page" to="/">Auth</Link>
                         </li>
                         <li class="nav-item">
                             <Link class="nav-link" to="/product">Product</Link>

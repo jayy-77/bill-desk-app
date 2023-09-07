@@ -9,6 +9,13 @@ import Auth from './components/Auth';
 import Analysis from './components/Analysis'
 
 function App() {
+
+  window.addEventListener("beforeunload", (ev) => {  
+    ev.preventDefault();
+    localStorage.removeItem("auth_token")
+    return null;
+});
+
   return (
     <>
       <Navbar />
@@ -18,9 +25,10 @@ function App() {
         <Route path='/set-product' element = {<ProductForm/>}/>
         <Route path='/sales' element = {<Sales/>}/>
         <Route path='/analysis' element = {<Analysis/>}/>
-        <Route path='/auth' element = {<Auth/>}/>
+        <Route path='/' element = {<Auth/>}/>
       </Routes>
     </>
+    
   );
 }
 

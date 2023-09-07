@@ -71,7 +71,8 @@ function Product() {
     }
 
     useEffect(() => {
-        http_product()
+       if(localStorage.getItem("auth_token")) http_product()
+       else window.location.href = '/'
     }, [])
 
     return (
@@ -133,7 +134,6 @@ function Product() {
                                 <td style={{ width: "0px" }}>
                                     <input type="number" id='purchase_qty' name={index} onChange={(e) => current_product_state(e.target.id, e.target.value)} disabled={p.name !== currProduct["name"]} />
                                 </td>
-                                 {console.log(`btn btn-primary ${p.name !== currProduct["name"] ? 'disabled' : ''}`)}
                                 <td className={`btn btn-primary ${p.name !== currProduct["name"] ? 'disabled' : ''}`} onClick={() => order_state_management(index)}>ADD</td>
                             </tr>
                         </>)) : null}

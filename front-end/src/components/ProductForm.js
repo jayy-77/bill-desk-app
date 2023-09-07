@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function ProductForm() {
     const [status, setStatus] = useState(false)
@@ -12,6 +12,10 @@ function ProductForm() {
             .then(response => {setStatus(true);})
             .catch(err => console.log(err))
     }
+
+    useEffect(() =>{
+        if(!localStorage.getItem("auth_token")) window.location.href = '/'
+    })
 
     function form_shallow_copy(e){
         setFormData(data =>({
