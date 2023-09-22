@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+var xmlhttp = new XMLHttpRequest();
 
 function Sales() {
     const [sales, setSales] = useState([])
@@ -33,11 +34,23 @@ function Sales() {
     }, [sales])
 
     return (<>
-        <h4 className='text-center m-1 p-2' style={{ backgroundColor: "whitesmoke" }}>SALES DATA</h4>
+        <h4 className='text-center m-1 p-2' style={{ backgroundColor: "whitesmoke" }}>SALES DATA of {localStorage.getItem("auth_token")}</h4>
 
         {fileName && <div class="m-3 alert alert-success d-flex align-items-center" role="alert">
             <div>
-                Excel file <b>{fileName}</b> saved Successfully
+                Excel file <b>{fileName}</b> saved Successfully 
+                <button onClick={() =>{
+                    window.location.replace(`file:///C:/Users/Admin/Music/Bill-Desk/back-end/API/${fileName}`)
+                }}> open </button>
+                {/* <button onClick={() => {
+                    xmlhttp.onreadystatechange = function(){
+                        if(xmlhttp.status == 200 && xmlhttp.readyState == 4){
+                        //   txt = xmlhttp.responseText;
+                        }
+                      };
+                      xmlhttp.open("GET","D:/Copy of copy_1.pdf",true);
+                      xmlhttp.send();
+                }}>Open</button> */}
             </div>
         </div>}
 
@@ -75,8 +88,8 @@ function Sales() {
             }
         </div>
         <div class="btn-group w-100 p-3" role="group" aria-label="Basic outlined example">
-            <button class="btn btn-outline-primary"><h4>TOTAL SALE: ₹{totalSale}</h4></button>
-            <button class="btn btn-outline-primary" onClick={http_sales_report}><h4>GENERATE REPORT</h4></button>
+            <button class="btn btn-outline-success"><h4>TOTAL SALE: ₹{totalSale}</h4></button>
+            <button class="btn btn-outline-danger" onClick={http_sales_report}><h4>GENERATE REPORT</h4></button>
         </div>
     </>)
 }

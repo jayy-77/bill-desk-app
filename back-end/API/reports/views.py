@@ -1,13 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-import firebase_admin
-import json
 from firebase_admin import credentials, firestore, storage
-import urllib
-import os
-import qrcode
-import random
-import datetime
+import os, qrcode, random, datetime, json, firebase_admin, urllib
 import pandas as pd
 
 cred = credentials.Certificate("C:/Users/Admin/Music/Bill-Desk/back-end/API/reports/upi-bill-desk-firebase-adminsdk-8ypmv-9d158df6fb.json")
@@ -174,3 +168,13 @@ def analysis_date(request):
     sales_analysis_date = set([date["date"] for date in sales_analysis_data])
     
     return JsonResponse({"dates": list(sales_analysis_date)})
+
+def update(request):
+    req = request.GET.dict()["product_data"]
+    data = json.loads(req)["data"]
+    
+    client_ref.document(client_token).collection("data").document("stocks").update({
+        "product_data": data
+    })
+    
+    return JsonResponse({"status": True})

@@ -29,5 +29,6 @@ urlpatterns = [
     path('analysis/', ReportView.analysis),
     path('clients/', ReportView.clients),
     path('auth/', ReportView.auth),
-    path('sales-analysis-date/', ReportView.analysis_date)
+    path('sales-analysis-date/', ReportView.analysis_date),
+    path('update/', ReportView.update),
 ]

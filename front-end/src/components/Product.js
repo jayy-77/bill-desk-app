@@ -15,13 +15,14 @@ function Product() {
     const [security_code, setSecurityCode] = useState("")
     const [open, setOpen] = useState(false);
     const [payment, setPayment] = useState(false)
+    const [validQty, setValidQty] = useState(true)
 
     function http_product() {
-        axios.get('http://127.0.0.1:8000/get-product-data', { 
+        axios.get('http://127.0.0.1:8000/get-product-data', {
             params: {
                 auth_token: JSON.stringify({ client: localStorage.getItem("auth_token") })
             }
-         })
+        })
             .then(response => {
                 setProduct(response.data.product_data);
             })
@@ -62,32 +63,42 @@ function Product() {
     }
 
     function order_state_management(e) {
-        setTotalBill((total_bill) => total_bill + product[e]["price"] * parseInt(currProduct["purchase_qty"]))
-        setOrder(o => ({
-            ...o,
-            ...{ [e]: currProduct }
-        }))
-        setCurrProduct({})
+        if (product[e]["quantity"] - currProduct["purchase_qty"] >= 0) {
+            setValidQty(true)
+            setTotalBill((total_bill) => total_bill + product[e]["price"] * parseInt(currProduct["purchase_qty"]))
+            setOrder(o => ({
+                ...o,
+                ...{ [e]: currProduct }
+            }))
+            setCurrProduct({})
+        } else setValidQty(false)
+
     }
 
     useEffect(() => {
-       if(localStorage.getItem("auth_token")) http_product()
-       else window.location.href = '/'
+        if (localStorage.getItem("auth_token")) http_product()
+        else window.location.href = '/'
     }, [])
 
     return (
-        <>  
+        <>
+            {!validQty && <>
+                <div class="m-3 alert alert-danger d-flex align-items-center" role="alert">
+                    Invalid Quantity
+                </div>
+            </>}
+
             {payment && <>
                 <div class="m-3 alert alert-success d-flex align-items-center" role="alert">
                     <div>
-                       Order Placed Successfully.
+                        Order Placed Successfully.
                     </div>
                 </div>
             </>}
 
             <div class="btn-group w-100 p-3" role="group" aria-label="Basic outlined example">
-                <button type="button" class="btn btn-outline-primary"><h4>TOTAL: ₹{total_bill}</h4></button>
-                <button type="button" class="btn btn-outline-primary" onClick={http_upi_qr}><h4>QR</h4></button>
+                <button type="button" class="btn btn-outline-success"><h4>TOTAL: ₹{total_bill}</h4></button>
+                <button type="button" class="btn btn-outline-danger" onClick={http_upi_qr}><h4>QR</h4></button>
             </div>
             <div className="container-fluid mt-3">
                 <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
@@ -113,7 +124,7 @@ function Product() {
                         </Button>
                     </DialogActions>
                 </Dialog>
-                <table class="table">
+                <table className="table border table-hover">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -126,7 +137,7 @@ function Product() {
                     </thead>
                     <tbody>
                         {product ? product.map((p, index) => (<>
-                            <tr onClick={() => current_product_state("name", product[index]["name"])}>
+                            <tr onClick={() => { setCurrProduct(null); current_product_state("name", product[index]["name"]) }}>
                                 <td>{index}</td>
                                 <td>{p.name}</td>
                                 <td>{p.price}</td>
